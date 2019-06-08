@@ -20,6 +20,8 @@ cli
   .arguments('<files|dirs|globs>')
   .usage(chalk`{green <files|dirs|globs>} [options]`)
   .option('-v, --verbose', 'print additional log')
+  .option('-k, --keepTree', 'keep the source folder structure in the output directory')
+  .option('-s, --src <dirs>', 'the src files location\n')
   .option('-b, --block', 'wrap a content block in files')
   .option('-c, --clean', 'use clean urls for output files')
   .option('-w, --watch', 'watch for file changes\n')
@@ -41,7 +43,7 @@ cli
   .parse(process.argv)
 
 
-// const srcPaths = [path.resolve(cli.src)]
+const srcPaths = [path.resolve(cli.src)]
 const files = getFiles(cli.args)
 const rootPaths = getRootDirs(cli.args)
 const templates = getTemplatesDirs(cli.template)
@@ -51,6 +53,8 @@ const opts = {
   block: cli.block,
   clean: cli.clean,
   data: getData(cli.data),
+  src: srcPaths,
+  keepTree: cli.keepTree,
   rootPaths,
   templates,
   out: cli.out,
@@ -72,7 +76,8 @@ api(files, opts)
 const watchList = []
 
 if (cli.watch) {
-  watchList.push(...templates, ...rootPaths)
+  watchList.push(...templates, ...rootPaths, ...srcPaths)
+  
   // set up watcher and watch for file chanegs
   logger.log('Running in watch mode')
   const watcher = chokidar.watch(watchList, {
