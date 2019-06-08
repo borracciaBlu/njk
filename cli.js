@@ -7,7 +7,7 @@ const chalk = require('chalk')
 const logger = require('./lib/logger')
 const getData = require('./lib/get-data')
 const globby = require('globby').sync
-const { isInside, getExisting, pathtype } = require('./lib/utils')
+const { isInside, getExisting, pathtype, getFiles, getRootDirs, getTemplatesDirs } = require('./lib/utils')
 const api = require('./')
 
 cli
@@ -40,23 +40,11 @@ cli
   })
   .parse(process.argv)
 
-// list of files to process
-const files = getExisting(
-  globby(cli.args, { absolute: true }),
-  pathtype.SOURCES
-)
-// list rootPaths for files and directories
-const rootPaths = files.map(f =>
-  fs.lstatSync(f).isDirectory() ? f : path.dirname(f)
-)
 
-const templateFiles = getExisting(
-  globby(cli.template, { absolute: true }),
-  pathtype.TEMPLATES
-)
-const templates = templateFiles.map(f =>
-  fs.lstatSync(f).isDirectory() ? f : path.dirname(f)
-)
+// const srcPaths = [path.resolve(cli.src)]
+const files = getFiles(cli.args)
+const rootPaths = getRootDirs(cli.args)
+const templates = getTemplatesDirs(cli.template)
 
 const opts = {
   verbose: cli.verbose,
@@ -91,6 +79,28 @@ if (cli.watch) {
     ignored: /(^|[/\\])\../,
     ignoreInitial: true
   })
+
+  watcher.on('add', file => {
+    opts['rootPaths'] = getRootDirs(cli.args);
+    opts['templates'] = getTemplatesDirs(cli.template);
+    opts['data'] = getData(cli.data);
+
+    if (isInside(file, templates)) {
+      // if a template is changed render everything again
+      logger.log(chalk`Add template {yellow ${path.relative(process.cwd(), file)}}`)
+      api(
+        getFiles(cli.args),
+        opts
+      )
+    } else if (/\.njk|\.html|\.md|\.mdown|\.markdown/.test(path.extname(file))) {
+      logger.log(chalk`Add {yellow ${path.relative(process.cwd(), file)}}`)
+      api(
+        file,
+        opts
+      )
+    }
+  })
+
   watcher.on('change', file => {
     if (isInside(file, templates)) {
       // if a template is changed render everything again
