@@ -24,11 +24,14 @@ module.exports = (source, opts) => {
         )
       )
   }
+  
   // multiple files
   if (Array.isArray(source)) {
     const time = process.hrtime()
     printResult(source.filter(isFile).map(processFile), opts, time)
+    return;
   }
+
   if (isFile(source)) {
     // single/changed file
     const time = process.hrtime()
