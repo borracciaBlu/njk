@@ -107,18 +107,6 @@ if (cli.watch) {
   })
 
   watcher.on('change', file => {
-    if (isInside(file, templates)) {
-      // if a template is changed render everything again
-      logger.log(
-        chalk`Changed template {yellow ${path.relative(process.cwd(), file)}}`
-      )
-      api(files, opts)
-    } else if (
-      /\.njk|\.html|\.md|\.mdown|\.markdown/.test(path.extname(file))
-    ) {
-      // if a file is changed render that file
-      logger.log(chalk`Changed {yellow ${path.relative(process.cwd(), file)}}`)
-      api(file, opts)
-    }
+      api(files, opts);
   })
 }
